@@ -1,124 +1,121 @@
-import React from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { Link } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React                                                       from 'react';
+import {Alert, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Link, useRouter}                                           from 'expo-router';
+import {Ionicons}                                                  from '@expo/vector-icons';
+import {ActionSheetProvider}                                       from '@expo/react-native-action-sheet';
+import GameItem                                                    from '../components/GameItem';
+import {Game}                                                      from '../types';
+import {Colors}                                                    from '../constants/Colors';
+import {Spacing}                                                   from '../constants/Spacing';
+import {addSession, formatScheduledTime, generateSessionId}        from '../data/SessionStore';
 
-// Mock data for games (will be replaced with real data later)
-const MOCK_GAMES = [
-  { id: '1', name: 'The Legend of Zelda', genre: 'Aventura' },
-  { id: '2', name: 'Super Mario Bros', genre: 'Plataforma' },
-  { id: '3', name: 'Minecraft', genre: 'Sandbox' },
-  { id: '4', name: 'FIFA 24', genre: 'Esportes' },
-  { id: '5', name: 'Elden Ring', genre: 'RPG' },
+// mock db de games
+const MOCK_GAMES: Game[] = [
+  {id: '1', name: 'The Legend of Zelda', genre: 'Aventura'},
+  {id: '2', name: 'Super Mario Bros', genre: 'Plataforma'},
+  {id: '3', name: 'Minecraft', genre: 'Sandbox'},
+  {id: '4', name: 'FIFA 24', genre: 'Esportes'},
+  {id: '5', name: 'Elden Ring', genre: 'RPG'},
 ];
 
-export default function MyGamesScreen() {
-  const renderGameItem = ({ item }: { item: typeof MOCK_GAMES[0] }) => (
-    <Link href={`/games/${item.id}`} asChild>
-      <TouchableOpacity style={styles.gameCard}>
-        <View style={styles.gameIconContainer}>
-          <Ionicons name="game-controller" size={32} color="#16213e" />
-        </View>
-        <View style={styles.gameInfo}>
-          <Text style={styles.gameName}>{item.name}</Text>
-          <Text style={styles.gameGenre}>{item.genre}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color="#666" />
-      </TouchableOpacity>
-    </Link>
+function MyGamesScreenContent () {
+  const router = useRouter();
+
+  const handleSchedule = (gameId: string, duration: string) => {
+    const game = MOCK_GAMES.find(g => g.id === gameId);
+    if (game) {
+      const newSession = {
+        id           : generateSessionId(),
+        gameId       : game.id,
+        gameName     : game.name,
+        scheduledTime: formatScheduledTime(duration),
+        duration     : duration,
+      };
+
+      // Adiciona sessão no mock-db
+      addSession(newSession);
+      console.log('[MyGamesScreen] sessão agendada:', newSession);
+
+      // confirma
+      Alert.alert(
+         'Sessão Agendada!',
+         `${game.name} agendado por ${duration}.\n\nVeja sua agenda para mais detalhes.`,
+         [
+           {text: 'OK', style: 'default'},
+           {text: 'Ver Agenda', onPress: () => router.push('/schedule')}
+         ]
+      );
+    }
+  };
+
+  const renderGameItem = ({item}: {item: Game}) => (
+     <GameItem game={item} onSchedule={handleSchedule}/>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Minha Coleção de Jogos</Text>
-        <Link href="/schedule" asChild>
-          <TouchableOpacity style={styles.scheduleButton}>
-            <Ionicons name="calendar" size={24} color="#fff" />
-            <Text style={styles.scheduleButtonText}>Agenda</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
+     <View style={styles.container}>
+       <View style={styles.header}>
+         <Text style={styles.headerTitle}>Minha Coleção de Jogos</Text>
+         <Link href='/schedule' asChild>
+           <TouchableOpacity style={styles.scheduleButton}>
+             <Ionicons name='calendar' size={24} color={Colors.textLight}/>
+             <Text style={styles.scheduleButtonText}>Agenda</Text>
+           </TouchableOpacity>
+         </Link>
+       </View>
 
-      <FlatList
-        data={MOCK_GAMES}
-        renderItem={renderGameItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
-    </View>
+       <FlatList
+          data={MOCK_GAMES}
+          renderItem={renderGameItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContainer}
+       />
+     </View>
+  );
+}
+
+export default function MyGamesScreen () {
+  return (
+     <ActionSheetProvider>
+       <MyGamesScreenContent/>
+     </ActionSheetProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
-  },
-  scheduleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#16213e',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6,
-  },
-  scheduleButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  gameCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  gameIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: '#e8f4f8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  gameInfo: {
-    flex: 1,
-  },
-  gameName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 4,
-  },
-  gameGenre: {
-    fontSize: 14,
-    color: '#666',
-  },
-});
+                                   container         : {
+                                     flex           : 1,
+                                     backgroundColor: Colors.background,
+                                   },
+                                   header            : {
+                                     backgroundColor  : Colors.cardBackground,
+                                     padding          : Spacing.lg,
+                                     flexDirection    : 'row',
+                                     justifyContent   : 'space-between',
+                                     alignItems       : 'center',
+                                     borderBottomWidth: 1,
+                                     borderBottomColor: Colors.border,
+                                   },
+                                   headerTitle       : {
+                                     fontSize  : Spacing.fontSize.xl,
+                                     fontWeight: Spacing.fontWeight.bold,
+                                     color     : Colors.textPrimary,
+                                   },
+                                   scheduleButton    : {
+                                     flexDirection    : 'row',
+                                     alignItems       : 'center',
+                                     backgroundColor  : Colors.primaryDark,
+                                     paddingHorizontal: Spacing.md,
+                                     paddingVertical  : Spacing.sm,
+                                     borderRadius     : Spacing.borderRadius.small,
+                                     gap              : Spacing.gap.sm,
+                                   },
+                                   scheduleButtonText: {
+                                     color     : Colors.textLight,
+                                     fontSize  : Spacing.fontSize.base,
+                                     fontWeight: Spacing.fontWeight.semibold,
+                                   },
+                                   listContainer     : {
+                                     padding: Spacing.lg,
+                                   },
+                                 });

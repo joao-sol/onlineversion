@@ -1,209 +1,211 @@
-import React from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { Link, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, {useEffect, useState}                                from 'react';
+import {Alert, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Link}                                                      from 'expo-router';
+import {Ionicons}                                                  from '@expo/vector-icons';
+import {ActionSheetProvider}                                       from '@expo/react-native-action-sheet';
+import SessionItem                                                 from '../components/SessionItem';
+import {Session}                                                   from '../types';
+import {Colors}                                                    from '../constants/Colors';
+import {Spacing}                                                   from '../constants/Spacing';
+import {getAllSessions, removeSession, subscribeToSessions}        from '../data/SessionStore';
 
-// Mock data for scheduled sessions (will be replaced with state management later)
-const MOCK_SESSIONS = [
-  { id: '1', gameName: 'The Legend of Zelda', scheduledTime: 'Hoje - 20:00', duration: '1 hora' },
-  { id: '2', gameName: 'Minecraft', scheduledTime: 'Amanhã - 18:30', duration: '30 minutos' },
-  { id: '3', gameName: 'FIFA 24', scheduledTime: 'Sexta - 21:00', duration: '1 hora' },
-];
+function ScheduleScreenContent () {
+  const [sessions, setSessions] = useState<Session[]>(getAllSessions());
 
-export default function ScheduleScreen() {
-  const router = useRouter();
+  // subscribe to mudanças no armazenamento
+  useEffect(() => {
+    console.log('[ScheduleScreen] Componente montado, inscrevendo-se nas mudanças');
 
-  const renderSessionItem = ({ item }: { item: typeof MOCK_SESSIONS[0] }) => (
-    <View style={styles.sessionCard}>
-      <View style={styles.sessionIconContainer}>
-        <Ionicons name="calendar-outline" size={28} color="#16213e" />
-      </View>
-      <View style={styles.sessionInfo}>
-        <Text style={styles.sessionGameName}>{item.gameName}</Text>
-        <View style={styles.sessionDetails}>
-          <Ionicons name="time-outline" size={16} color="#666" />
-          <Text style={styles.sessionTime}>{item.scheduledTime}</Text>
-        </View>
-        <Text style={styles.sessionDuration}>Duração: {item.duration}</Text>
-      </View>
-      <TouchableOpacity style={styles.sessionOptions}>
-        <Ionicons name="ellipsis-vertical" size={24} color="#666" />
-      </TouchableOpacity>
-    </View>
+    const unsubscribe = subscribeToSessions((updatedSessions) => {
+      console.log('[ScheduleScreen] gaming sessions atualizadas contagem:', updatedSessions.length);
+      setSessions(updatedSessions);
+    });
+
+    //limpa inscrição ao desmontar
+    return () => {
+      console.log('[ScheduleScreen] Componente desmontado, cancelando inscrição');
+      unsubscribe();
+    };
+  }, []);
+
+  const handleComplete = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      Alert.alert(
+         'Sessão Concluída!',
+         `Parabéns por completar sua sessão de ${session.gameName}!`,
+         [
+           {
+             text   : 'OK',
+             onPress: () => {
+               removeSession(sessionId);
+             }
+           }
+         ]
+      );
+    }
+  };
+
+  const handleCancel = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      Alert.alert(
+         'Cancelar Sessão',
+         `Tem certeza que deseja cancelar a sessão de ${session.gameName}?`,
+         [
+           {text: 'Não', style: 'cancel'},
+           {
+             text   : 'Sim, Cancelar',
+             style  : 'destructive',
+             onPress: () => {
+               removeSession(sessionId);
+             }
+           }
+         ]
+      );
+    }
+  };
+
+  const renderSessionItem = ({item}: {item: Session}) => (
+     <SessionItem
+        session={item}
+        onComplete={handleComplete}
+        onCancel={handleCancel}
+     />
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="calendar-outline" size={80} color="#ccc" />
-      <Text style={styles.emptyTitle}>Nenhuma sessão agendada</Text>
-      <Text style={styles.emptyText}>
-        Comece agendando uma sessão de jogo para organizar seu tempo!
-      </Text>
-      <Link href="/" asChild>
-        <TouchableOpacity style={styles.emptyButton}>
-          <Text style={styles.emptyButtonText}>Ver Meus Jogos</Text>
-        </TouchableOpacity>
-      </Link>
-    </View>
+     <View style={styles.emptyContainer}>
+       <Ionicons name='calendar-outline' size={80} color={Colors.gray300}/>
+       <Text style={styles.emptyTitle}>Nenhuma sessão agendada</Text>
+       <Text style={styles.emptyText}>
+         Comece agendando uma sessão de jogo para organizar seu tempo!
+       </Text>
+       <Link href='/' asChild>
+         <TouchableOpacity style={styles.emptyButton}>
+           <Text style={styles.emptyButtonText}>Ver Meus Jogos</Text>
+         </TouchableOpacity>
+       </Link>
+     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Sessões Agendadas</Text>
-        <View style={styles.headerInfo}>
-          <Ionicons name="game-controller" size={20} color="#16213e" />
-          <Text style={styles.headerCount}>{MOCK_SESSIONS.length} sessões</Text>
-        </View>
-      </View>
+     <View style={styles.container}>
+       <View style={styles.header}>
+         <Text style={styles.headerTitle}>Sessões Agendadas</Text>
+         <View style={styles.headerInfo}>
+           <Ionicons name='game-controller' size={20} color={Colors.primaryDark}/>
+           <Text style={styles.headerCount}>{sessions.length} sessões</Text>
+         </View>
+       </View>
 
-      {MOCK_SESSIONS.length > 0 ? (
-        <FlatList
-          data={MOCK_SESSIONS}
-          renderItem={renderSessionItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
-        />
-      ) : (
-        renderEmptyState()
-      )}
+       {sessions.length > 0 ? (
+          <FlatList
+             data={sessions}
+             renderItem={renderSessionItem}
+             keyExtractor={(item) => item.id}
+             contentContainerStyle={styles.listContainer}
+          />
+       ) : (
+           renderEmptyState()
+        )}
 
-      <View style={styles.footer}>
-        <Link href="/" asChild>
-          <TouchableOpacity style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color="#16213e" />
-            <Text style={styles.backButtonText}>Voltar aos Jogos</Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
-    </View>
+       <View style={styles.footer}>
+         <Link href='/' asChild>
+           <TouchableOpacity style={styles.backButton}>
+             <Ionicons name='arrow-back' size={20} color={Colors.primaryDark}/>
+             <Text style={styles.backButtonText}>Voltar aos Jogos</Text>
+           </TouchableOpacity>
+         </Link>
+       </View>
+     </View>
+  );
+}
+
+export default function ScheduleScreen () {
+  return (
+     <ActionSheetProvider>
+       <ScheduleScreenContent/>
+     </ActionSheetProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
-    marginBottom: 8,
-  },
-  headerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerCount: {
-    fontSize: 14,
-    color: '#666',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  sessionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sessionIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: '#e8f4f8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  sessionInfo: {
-    flex: 1,
-  },
-  sessionGameName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a2e',
-    marginBottom: 6,
-  },
-  sessionDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  sessionTime: {
-    fontSize: 14,
-    color: '#666',
-  },
-  sessionDuration: {
-    fontSize: 13,
-    color: '#999',
-  },
-  sessionOptions: {
-    padding: 8,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a2e',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 20,
-  },
-  emptyButton: {
-    backgroundColor: '#16213e',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  emptyButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-  },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#16213e',
-  },
-});
+                                   container      : {
+                                     flex           : 1,
+                                     backgroundColor: Colors.background,
+                                   },
+                                   header         : {
+                                     backgroundColor  : Colors.cardBackground,
+                                     padding          : Spacing.lg,
+                                     borderBottomWidth: 1,
+                                     borderBottomColor: Colors.border,
+                                   },
+                                   headerTitle    : {
+                                     fontSize    : Spacing.fontSize.xl,
+                                     fontWeight  : Spacing.fontWeight.bold,
+                                     color       : Colors.textPrimary,
+                                     marginBottom: Spacing.sm,
+                                   },
+                                   headerInfo     : {
+                                     flexDirection: 'row',
+                                     alignItems   : 'center',
+                                     gap          : Spacing.gap.md,
+                                   },
+                                   headerCount    : {
+                                     fontSize: Spacing.fontSize.base,
+                                     color   : Colors.textSecondary,
+                                   },
+                                   listContainer  : {
+                                     padding: Spacing.lg,
+                                   },
+                                   emptyContainer : {
+                                     flex          : 1,
+                                     justifyContent: 'center',
+                                     alignItems    : 'center',
+                                     padding       : Spacing.xxl,
+                                   },
+                                   emptyTitle     : {
+                                     fontSize    : Spacing.fontSize.xxl,
+                                     fontWeight  : Spacing.fontWeight.bold,
+                                     color       : Colors.textPrimary,
+                                     marginTop   : Spacing.lg,
+                                     marginBottom: Spacing.sm,
+                                   },
+                                   emptyText      : {
+                                     fontSize    : Spacing.fontSize.base,
+                                     color       : Colors.textSecondary,
+                                     textAlign   : 'center',
+                                     marginBottom: Spacing.xl,
+                                     lineHeight  : 20,
+                                   },
+                                   emptyButton    : {
+                                     backgroundColor  : Colors.primaryDark,
+                                     paddingHorizontal: Spacing.xl,
+                                     paddingVertical  : Spacing.md,
+                                     borderRadius     : Spacing.borderRadius.small,
+                                   },
+                                   emptyButtonText: {
+                                     color     : Colors.textLight,
+                                     fontSize  : Spacing.fontSize.lg,
+                                     fontWeight: Spacing.fontWeight.semibold,
+                                   },
+                                   footer         : {
+                                     backgroundColor: Colors.cardBackground,
+                                     padding        : Spacing.lg,
+                                     borderTopWidth : 1,
+                                     borderTopColor : Colors.border,
+                                   },
+                                   backButton     : {
+                                     flexDirection  : 'row',
+                                     alignItems     : 'center',
+                                     justifyContent : 'center',
+                                     gap            : Spacing.gap.md,
+                                     paddingVertical: Spacing.md,
+                                   },
+                                   backButtonText : {
+                                     fontSize  : Spacing.fontSize.lg,
+                                     fontWeight: Spacing.fontWeight.semibold,
+                                     color     : Colors.primaryDark,
+                                   },
+                                 });
