@@ -10,7 +10,24 @@ import {Spacing}                                                   from '../cons
 import {getAllSessions, removeSession, subscribeToSessions}        from '../data/SessionStore';
 
 function ScheduleScreenContent () {
-  const [sessions, setSessions] = useState<Session[]>(getAllSessions());
+
+  const [sessions, setSessions] = useState<Session[]>([]);
+  useEffect(() => {
+    let unsub: undefined | (() => void);
+    (async ()=>{
+      try {
+        const initial = await getAllSessions();
+        setSessions(initial);
+      } catch ( e ) {
+        console.log('[Schedule] Erro ao carregar sesões '+e);
+      }
+      unsub = subscribeToSessions((updated) => {
+        setSessions(updated);
+      })
+    })();
+
+    return () => {if (unsub) unsub();}
+  }, []);
 
   // subscribe to mudanças no armazenamento
   useEffect(() => {

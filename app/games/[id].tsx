@@ -6,75 +6,106 @@ import {ActionSheetProvider, useActionSheet}                                    
 import {Colors}                                                                         from '../../constants/Colors';
 import {Spacing}                                                                        from '../../constants/Spacing';
 import {addSession, formatScheduledTime, generateSessionId}                             from '../../data/SessionStore';
+import {getGameByIdPB}                                                                  from '../../data/GamesStorePB';
+import {Game}                                                                           from '../../types';
 
-// simula db de games
-const GAME_DATABASE = {
-  '1': {
-    id         : '1',
-    name       : 'The Legend of Zelda',
-    genre      : 'Aventura',
-    description: 'Um jogo de aventura épico onde você explora o reino de Hyrule, resolve enigmas e enfrenta inimigos poderosos.',
-    platform   : 'Nintendo Switch',
-    releaseYear: '2017',
-  },
-  '2': {
-    id         : '2',
-    name       : 'Super Mario Bros',
-    genre      : 'Plataforma',
-    description: 'O clássico jogo de plataforma onde Mario precisa resgatar a Princesa Peach das garras de Bowser.',
-    platform   : 'Nintendo Switch',
-    releaseYear: '1985',
-  },
-  '3': {
-    id         : '3',
-    name       : 'Minecraft',
-    genre      : 'Sandbox',
-    description: 'Um jogo de mundo aberto onde você pode construir, explorar e sobreviver em um mundo feito de blocos.',
-    platform   : 'Multi-plataforma',
-    releaseYear: '2011',
-  },
-  '4': {
-    id         : '4',
-    name       : 'FIFA 24',
-    genre      : 'Esportes',
-    description: 'O mais recente simulador de futebol com times e jogadores reais de todo o mundo.',
-    platform   : 'PlayStation, Xbox, PC',
-    releaseYear: '2023',
-  },
-  '5': {
-    id         : '5',
-    name       : 'Elden Ring',
-    genre      : 'RPG',
-    description: 'Um RPG de ação desafiador em um mundo de fantasia sombrio, criado por FromSoftware e George R.R. Martin.',
-    platform   : 'PlayStation, Xbox, PC',
-    releaseYear: '2022',
-  },
-};
-
-type GameData = typeof GAME_DATABASE[keyof typeof GAME_DATABASE];
+// NOTE: Hardcoded GAME_DATABASE is no longer used - games are now fetched from PocketBase
+// Kept here for reference only
+// const GAME_DATABASE = {
+//   '1': {
+//     id         : '1',
+//     name       : 'The Legend of Zelda',
+//     genre      : 'Aventura',
+//     description: 'Um jogo de aventura épico onde você explora o reino de Hyrule, resolve enigmas e enfrenta inimigos poderosos.',
+//     platform   : 'Nintendo Switch',
+//     releaseYear: '2017',
+//   },
+//   '2': {
+//     id         : '2',
+//     name       : 'Super Mario Bros',
+//     genre      : 'Plataforma',
+//     description: 'O clássico jogo de plataforma onde Mario precisa resgatar a Princesa Peach das garras de Bowser.',
+//     platform   : 'Nintendo Switch',
+//     releaseYear: '1985',
+//   },
+//   '3': {
+//     id         : '3',
+//     name       : 'Minecraft',
+//     genre      : 'Sandbox',
+//     description: 'Um jogo de mundo aberto onde você pode construir, explorar e sobreviver em um mundo feito de blocos.',
+//     platform   : 'Multi-plataforma',
+//     releaseYear: '2011',
+//   },
+//   '4': {
+//     id         : '4',
+//     name       : 'FIFA 24',
+//     genre      : 'Esportes',
+//     description: 'O mais recente simulador de futebol com times e jogadores reais de todo o mundo.',
+//     platform   : 'PlayStation, Xbox, PC',
+//     releaseYear: '2023',
+//   },
+//   '5': {
+//     id         : '5',
+//     name       : 'Elden Ring',
+//     genre      : 'RPG',
+//     description: 'Um RPG de ação desafiador em um mundo de fantasia sombrio, criado por FromSoftware e George R.R. Martin.',
+//     platform   : 'PlayStation, Xbox, PC',
+//     releaseYear: '2022',
+//   },
+// };
+//
+// type GameData = typeof GAME_DATABASE[keyof typeof GAME_DATABASE];
 
 function GameDetailsScreenContent () {
   const {id} = useLocalSearchParams<{id: string}>();
   const router = useRouter();
-  const [game, setGame] = useState<GameData | null>(null);
+  const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const {showActionSheetWithOptions} = useActionSheet();
 
-  // simlua a chamada de API
+  // Fetch game data from PocketBase
   useEffect(() => {
-    // atraso de chamada de API
-    console.log('GameDetailsScreen - Carregando jogo com ID:', id);
-    const timer = setTimeout(() => {
-      if (id && GAME_DATABASE[id as keyof typeof GAME_DATABASE]) {
-        setGame(GAME_DATABASE[id as keyof typeof GAME_DATABASE]);
-        console.log('Dados do jogo carregados:', GAME_DATABASE[id as keyof typeof GAME_DATABASE].name);
+    let mounted = true;
+    
+    const loadGame = async () => {
+      console.log('[GameDetailsScreen] Loading game with ID:', id);
+      setLoading(true);
+      
+      try {
+        if (!id) {
+          console.log('[GameDetailsScreen] No ID provided');
+          setLoading(false);
+          return;
+        }
+        
+        const gameData = await getGameByIdPB(id as string);
+        
+        if (mounted) {
+          if (gameData) {
+            setGame(gameData);
+            console.log('[GameDetailsScreen] Game loaded successfully:', gameData.name);
+          } else {
+            console.log('[GameDetailsScreen] Game not found with ID:', id);
+            setGame(null);
+          }
+        }
+      } catch (error) {
+        console.error('[GameDetailsScreen] Error loading game:', error);
+        if (mounted) {
+          setGame(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    }, 800);
-
+    };
+    
+    loadGame();
+    
     return () => {
-      console.log('GameDetailsScreen desmontado');
-      clearTimeout(timer);
+      mounted = false;
+      console.log('[GameDetailsScreen] Component unmounted');
     };
   }, [id]);
 

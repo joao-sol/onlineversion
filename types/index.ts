@@ -2,10 +2,13 @@ export interface Game {
   id: string;
   name: string;
   genre: string;
+  isFavorite?: boolean;
   description?: string;
   platform?: string;
   releaseYear?: string;
   image?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Session {
@@ -19,6 +22,7 @@ export interface Session {
 export interface GameItemProps {
   game: Game;
   onSchedule?: (gameId: string, duration: string) => void;
+  onFavoriteToggle?: (gameId: string, newFavoriteState: boolean) => void;
 }
 
 export interface SessionItemProps {

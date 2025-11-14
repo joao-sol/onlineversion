@@ -1,11 +1,12 @@
 import React, {useEffect, useState}               from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {ActivityIndicator, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {Link}                                     from 'expo-router';
 import {Ionicons}                                 from '@expo/vector-icons';
 import {useActionSheet}                           from '@expo/react-native-action-sheet';
 import {GameItemProps}                            from '../types';
 import {Colors}                                   from '../constants/Colors';
 import {Spacing}                                  from '../constants/Spacing';
+import {toggleFavoriteInPB}                       from '../data/GamesStorePB';
 
 /**
  * Componente GameItem
@@ -14,30 +15,37 @@ import {Spacing}                                  from '../constants/Spacing';
  * - useEffect: Registra eventos do ciclo de vida do componente
  * - ActionSheet: Fornece opções de agendamento
  */
-export default function GameItem ({game, onSchedule}: GameItemProps) {
-  const [isFavorite, setIsFavorite] = useState(false);
+export default function GameItem ({game, onSchedule, onFavoriteToggle}: GameItemProps) {
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const {showActionSheetWithOptions} = useActionSheet();
 
-  // useEffect to demonstrate lifecycle logging (academic requirement)
+  // useEffect loga o estado de favorito
   useEffect(() => {
-    console.log(`[GameItem] Componente montado para o jogo: ${game.name}`);
-
-    return () => {
-      console.log(`[GameItem] Componente desmontado para o jogo: ${game.name}`);
-    };
-  }, [game.name]);
-
-  // useEffect loga o estado de favorito. Poderia chamar DB, por exemplo
-  useEffect(() => {
-    if (isFavorite) {
+    if (game.isFavorite) {
       console.log(`[GameItem] Jogo "${game.name}" marcado como favorito`);
     } else {
       console.log(`[GameItem] Jogo "${game.name}" desmarcado como favorito`);
     }
-  }, [isFavorite, game.name]);
+  }, [game.isFavorite, game.name]);
 
-  const toggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+  const toggleFavorite = async () => {
+    if (isTogglingFavorite) return;
+    
+    setIsTogglingFavorite(true);
+    try {
+      const newFavoriteState = !(game.isFavorite ?? false);
+      await toggleFavoriteInPB(game.id, game.isFavorite ?? false);
+      console.log(`[GameItem] Successfully toggled favorite for: ${game.name}`);
+      
+      // Notify parent component to update local state
+      if (onFavoriteToggle) {
+        onFavoriteToggle(game.id, newFavoriteState);
+      }
+    } catch (error) {
+      console.error(`[GameItem] Error toggling favorite for ${game.name}:`, error);
+    } finally {
+      setIsTogglingFavorite(false);
+    }
   };
 
   const handleSchedulePress = () => {
@@ -88,12 +96,17 @@ export default function GameItem ({game, onSchedule}: GameItemProps) {
          <TouchableOpacity
             style={styles.actionButton}
             onPress={toggleFavorite}
+            disabled={isTogglingFavorite}
          >
-           <Ionicons
-              name={isFavorite ? "star" : "star-outline"}
-              size={24}
-              color={isFavorite ? Colors.favorite : Colors.textSecondary}
-           />
+           {isTogglingFavorite ? (
+             <ActivityIndicator size="small" color={Colors.primaryDark} />
+           ) : (
+             <Ionicons
+                name={game.isFavorite ? "star" : "star-outline"}
+                size={24}
+                color={game.isFavorite ? Colors.favorite : Colors.textSecondary}
+             />
+           )}
          </TouchableOpacity>
 
          <TouchableOpacity
