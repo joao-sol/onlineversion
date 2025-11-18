@@ -1,11 +1,11 @@
 [
   {
     "id": "pbc_879072730",
-    "listRule": null,
-    "viewRule": null,
-    "createRule": null,
-    "updateRule": null,
-    "deleteRule": null,
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
     "name": "games",
     "type": "base",
     "fields": [
@@ -95,8 +95,17 @@
       },
       {
         "hidden": false,
+        "id": "bool4089940794",
+        "name": "isFavorite",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
+      },
+      {
+        "hidden": false,
         "id": "autodate2990389176",
-        "name": "created",
+        "name": "createdAt",
         "onCreate": true,
         "onUpdate": false,
         "presentable": false,
@@ -106,7 +115,7 @@
       {
         "hidden": false,
         "id": "autodate3332085495",
-        "name": "updated",
+        "name": "updatedAt",
         "onCreate": true,
         "onUpdate": true,
         "presentable": false,
@@ -119,11 +128,11 @@
   },
   {
     "id": "pbc_3660498186",
-    "listRule": null,
-    "viewRule": null,
-    "createRule": null,
-    "updateRule": null,
-    "deleteRule": null,
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "",
+    "updateRule": "",
+    "deleteRule": "",
     "name": "sessions",
     "type": "base",
     "fields": [
@@ -195,6 +204,29 @@
         "required": false,
         "system": false,
         "type": "text"
+      },
+      {
+        "hidden": false,
+        "id": "bool2970678695",
+        "name": "isCompleted",
+        "presentable": false,
+        "required": false,
+        "system": false,
+        "type": "bool"
+      },
+      {
+        "hidden": false,
+        "id": "file383471497",
+        "maxSelect": 1,
+        "maxSize": 0,
+        "mimeTypes": [],
+        "name": "picture",
+        "presentable": false,
+        "protected": false,
+        "required": false,
+        "system": false,
+        "thumbs": [],
+        "type": "file"
       },
       {
         "hidden": false,
