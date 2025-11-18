@@ -91,46 +91,6 @@ export async function seedGames (): Promise<void> {
 }
 
 /**
- * Alternative version: Seeds games with custom IDs
- * Use this if you want to preserve the original IDs from GAME_DATABASE
- */
-export async function seedGamesWithCustomIds (): Promise<void> {
-  console.log('[SeedGames] Starting to seed games with custom IDs into PocketBase...');
-
-  let successCount = 0;
-  let errorCount = 0;
-
-  for (const [key, gameData] of Object.entries(GAME_DATABASE)) {
-    try {
-      // Include the id field for PocketBase
-      await pb.collection('games').create({
-                                            id         : gameData.id,
-                                            name       : gameData.name,
-                                            genre      : gameData.genre,
-                                            description: gameData.description,
-                                            platform   : gameData.platform,
-                                            releaseYear: gameData.releaseYear,
-                                          });
-
-      console.log(`[SeedGames] ✓ Successfully created game with ID ${gameData.id}: ${gameData.name}`);
-      successCount++;
-    } catch ( error: any ) {
-      if (error?.status === 400) {
-        console.log(`[SeedGames] ⚠ Game "${gameData.name}" (ID: ${gameData.id}) may already exist, skipping...`);
-      } else {
-        console.error(`[SeedGames] ✗ Error creating game "${gameData.name}":`, error);
-        errorCount++;
-      }
-    }
-  }
-
-  console.log('\n[SeedGames] Seeding completed!');
-  console.log(`[SeedGames] Success: ${successCount} games`);
-  console.log(`[SeedGames] Errors: ${errorCount} games`);
-  console.log(`[SeedGames] Total: ${Object.keys(GAME_DATABASE).length} games\n`);
-}
-
-/**
  * Clears all games from the collection (use with caution!)
  */
 export async function clearAllGames (): Promise<void> {

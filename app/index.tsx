@@ -1,17 +1,16 @@
 import React, {useEffect, useState}                                from 'react';
-import {Alert, FlatList, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Alert, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {Link, useRouter}                                           from 'expo-router';
+import {FlashList}                                                 from '@shopify/flash-list';
 import {Ionicons}                                                  from '@expo/vector-icons';
 import {ActionSheetProvider}                                       from '@expo/react-native-action-sheet';
-import GameItem                                                    from '../components/GameItem';
-import {Game}                                                      from '../types';
-import {Colors}                                                    from '../constants/Colors';
-import {Spacing}                                                   from '../constants/Spacing';
-import {addSession, formatScheduledTime, generateSessionId}        from '../data/SessionStore';
-import {getAllGamesPB}            from "@/data/GamesStorePB";
-import seedGames, {clearAllGames} from "@/lib/seedGames";
-import {clearAllSessions}         from "@/lib/seedSessions";
-import CameraScreen                                                from "@/tests/Camera";
+import GameItem from '../components/GameItem';
+import {Game}    from '@/types';
+import {Colors}                                             from '@/constants/Colors';
+import {Spacing}                                            from '@/constants/Spacing';
+import {addSession, formatScheduledTime} from '@/data/SessionStorePB';
+import {getAllGamesPB}                                      from "@/data/GamesStorePB";
+import {seedGames, clearAllGames} from "@/lib/seedGames";
 
 // mock db de games
 const MOCK_GAMES: Game[] = [
@@ -154,8 +153,7 @@ function MyGamesScreenContent () {
     if (!game) return;
 
     try {
-      addSession({
-                   id           : generateSessionId(),
+      await addSession({
                    gameId       : game.id,
                    duration     : duration,
                    gameName     : game.name,
@@ -248,7 +246,7 @@ function MyGamesScreenContent () {
           </Link>
         </View>
 
-        <FlatList
+        <FlashList
             data={games}
             renderItem={renderGameItem}
             keyExtractor={(item) => item.id}

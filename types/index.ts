@@ -17,6 +17,10 @@ export interface Session {
   gameName: string;
   scheduledTime: string;
   duration: string;
+  isCompleted?: boolean;
+  picture?: Blob
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface GameItemProps {

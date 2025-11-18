@@ -37,6 +37,15 @@ export default function RootLayout () {
               headerTitleStyle: {fontWeight: Spacing.fontWeight.bold}
             }}
          />
+         <Stack.Screen
+             name='sessions/[id]'
+             options={{
+               title           : "Detalhes da Sessão",
+               headerStyle     : {backgroundColor: Colors.primary},
+               headerTintColor : Colors.textLight,
+               headerTitleStyle: {fontWeight: Spacing.fontWeight.bold}
+             }}
+         />
        </Stack>
      </>
   );
