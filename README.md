@@ -18,14 +18,13 @@ Aplicação mobile para gerenciar sua coleção de jogos e organizar sessões de
 - Yarn instalado
 - Expo Go instalado no seu dispositivo móvel (iOS/Android)
 - PocketBase instalado e rodando um banco com as collections existentes no projeto
-- Provavelmente o servidor estará desligado, então altere o endereço do banco de dados em lib.pb.ts para: export const POCKETBASE_URL = process.env.EXPO_PUBLIC_POCKETBASE_URL || 'http://localhost:8090/'
+- Provavelmente o servidor estará desligado, então altere o endereço do banco de dados em lib/pb.ts para: export const POCKETBASE_URL = process.env.EXPO_PUBLIC_POCKETBASE_URL || 'http://localhost:8090/'
 
 ### Instalação e Execução
 
 1. Clone o repositório:
 ```bash
-git clone [https://github.com/VitorThorvi/tsi34a-availiacao-01
-cd 34a-avaliacao-01](https://github.com/joao-sol/onlineversion)
+git clone https://github.com/joao-sol/onlineversion
 ```
 
 2. Instale as dependências:
